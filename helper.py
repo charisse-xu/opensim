@@ -1,22 +1,27 @@
 import numpy as np
 import ahrs
 import time
+import os 
+import csv
+import datetime
 from ahrs.common.orientation import q2R
+from transforms3d.taitbryan import quat2euler
 
 # Function to write data from line_ind to a .sto file
-def quat2sto_single(sensor_data, header_text, file_dir, t_step, rate, sensor_ind_list = [4,4,2,3,0,1]):
-    num_sensors, _ = sensor_data.shape
+def quat2sto_single(sensor_data, sensors, file_dir, t_step, rate):
+    num_sensors = len(sensor_data["raw_data"])
+    header_text = "\t".join(["time"] + sensors) + "\n" 
     with open(file_dir, 'w') as f:
         # initial information to write to file
         f.write("DataRate={}\n".format(rate))
         f.write("DataType=Quaternion\n")
         f.write("version=3\n")
-        f.write("OpenSimVersion=4.2\n")
+        f.write("OpenSimVersion=4.5\n")
         f.write("endheader\n")
         f.write(header_text)
         f.write("{}".format(t_step))
-        for j in sensor_ind_list:
-            f.write("\t{},{},{},{}".format(sensor_data[j,0],sensor_data[j,1],sensor_data[j,2],sensor_data[j,3]))
+        for sensor in range(len(sensors)):
+            f.write("\t"+",".join([sensor_data["raw_data"][sensor][f"Quat{i+1}"] for i in range(4)]))
         f.write("\n")
 
 # Function to read sto file to load fake real time data in numpy array
@@ -36,7 +41,49 @@ def sto2quat(file_dir, lines = 3, offset = 6, num_sensors=8):
                         subsect = sect.split(',')
                         for k,val in enumerate(subsect):
                             sensor_data[j-1,row_ind,k] = float(val)
-    return times, sensor_data
+    return times, 
+
+def construct_json_object(header, row):
+    json_object = {}
+    for h, v in zip(header, row):
+        # Split the header to check if it ends with a number indicating sensor index
+        parts = h.split('_')
+        if parts[-1].isdigit():
+            # If the header is for a sensor data, nest it under 'SensorIndex_x'
+            sensor_index = parts[-1]
+            sensor_key = '_'.join(parts[:-1])
+            if f"SensorIndex_{sensor_index}" not in json_object:
+                json_object[f"SensorIndex_{sensor_index}"] = {}
+            json_object[f"SensorIndex_{sensor_index}"][sensor_key] = v
+        else:
+            json_object[h] = v
+    return json_object
+
+# Function to convert CSV to the desired JSON structure
+def convert_csv_to_list_of_packets(csv_file_path):
+    if not csv_file_path.lower().endswith('.csv'):
+        raise ValueError("Wrong file type. This only works with .csv files for now. ")
+    list_of_packets = []
+
+    # Retrieve the creation time of the file
+
+    with open(csv_file_path, mode='r') as file:
+        csv_reader = csv.reader(file)
+        header = next(csv_reader)  # Get the header row
+
+        # Process each row in the CSV
+        for row in csv_reader:
+            packet = {"raw_data": [], "custom_data": None}
+            json_object = construct_json_object(header, row)
+            
+            # Iterate over each possible sensor index
+            for i in range(1, 9):  # Assuming there are up to 8 sensors
+                sensor_key = f"SensorIndex_{i}"
+                if sensor_key in json_object:
+                    packet["raw_data"].append(json_object[sensor_key])
+            if packet["raw_data"]:  # Only add the packet if there is raw data
+                list_of_packets.append(packet)
+    return list_of_packets
 
 def compute_quat(all_data, len_sensor_list, quat_cal_offset, rot_inds, num_sensors=5, t_offset=0, signals_per_sensor=6, beta=0.2*np.ones(5), rate=60.0, verbose=False, beta_init=0.4):
     d2g = ahrs.common.DEG2RAD   # Constant to convert degrees to radians
@@ -98,3 +145,15 @@ def orientMat(R, num_angles=100, R_ref=np.array([[1.,0.,0. ],[0.,0.,-1.],[0.,1.,
             best_distance = norm
             best_angle = a
     return best_angle, best_distance
+
+def calculate_heading_error(data, sensors, transformations):
+    angles = np.zeros(len(sensors))
+    for sensor, sensor_name in enumerate(sensors):
+        quat = [float(data["raw_data"][sensor][f"Quat{i+1}"]) for i in range(4)]
+        angles[sensor] = quat2euler(quat)[2]
+    return angles.mean()
+    
+
+
+
+

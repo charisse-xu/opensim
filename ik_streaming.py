@@ -3,13 +3,20 @@
 import opensim as osim
 from opensim import Vec3
 import numpy as np
-from helper import quat2sto_single, sto2quat
+from helper import quat2sto_single, sto2quat, calculate_heading_error, convert_csv_to_list_of_packets
 import helper as h
 import time
 import os
 import sys
-from multiprocessing import Process, Queue
+import pathlib
+import threading
+import json
+# from multiprocessing import Process, Queue
+from queue import Queue
+import websocket
 import workers # define the worker functions in this .py file
+
+WS_URL = "ws://192.168.137.1:5678/"
 
 def clear(q):
     try:
@@ -22,64 +29,92 @@ def clear(q):
 real_time = True # set to True for using the kinematics in the python script for real-time applications
 
 # Parameters for IK solver
-fake_real_time = False # True to run offline, False to record data and run online
-log_temp = True # True to log CPU temperature data
+offline = True # True to run offline, False to record data and run online
 log_data = True # if true save all IK outputs, else only use those in reporter_list for easier custom coding
-home_dir = '/home/ubuntu/RealTimeKin/' # location of the main RealTimeKin folder
+home_dir = pathlib.Path(__file__).parent.resolve() # location of the main RealTimeKin folder
 uncal_model = 'Rajagopal_2015.osim'
-uncal_model_filename = home_dir + uncal_model
-model_filename = home_dir+'calibrated_' + uncal_model
-fake_online_data = home_dir+'recordings/'#test_data.npy'#'test_IMU_data.npy'#'MT_012005D6_009-001_orientations.sto'
-sto_filename = home_dir+'tiny_file.sto'
-visualize = False
-rate = 20.0 # samples hz of IMUs
+uncal_model_filename = home_dir / uncal_model
+model_filename = home_dir / ('calibrated_' + uncal_model)
+offline_data = home_dir / 'offline/'#test_data.npy'#'test_IMU_data.npy'#'MT_012005D6_009-001_orientations.sto'
+sto_filename = str(home_dir /'tiny_file.sto')
+visualize = True
+rate = 50.0 # samples hz of IMUs
 accuracy = 0.001 # value tuned for accurate and fast IK solver
 constraint_var = 10.0 # value tuned for accurate and fast IK solver
 init_time = 4.0 # seconds of data to initialize from
 
+sensors = ["tibia_r_imu", "femur_r_imu"]
+base_imu = "femur_r_imu"
+base_imu_axis = "y"
+offline_data_name = "thigh_shank.csv"
+
 # Initialize the quaternions
-signals_per_sensor = 6
 file_cnt = 0
-save_dir_init = home_dir+ 'recordings/' # appending folder name here
+save_dir_init = home_dir / 'recordings/' # appending folder name here
 save_file = '/recording_'
 ts_file = '/timestamp_'
 script_live = True
 
 q = Queue() # queue for IMU messages
-b = Queue() # queue for button messages
-imuProc = Process(target=workers.readIMU, args=(q, b, fake_online_data, init_time, signals_per_sensor, save_dir_init,home_dir))
-imuProc.start() # spawning IMU process
-sensor_ind_list, rate, header_text, save_folder, save_folder, file_cnt, sim_len, fake_real_time, fake_data_len = b.get()
-save_dir = save_dir_init+save_folder+'/' # append the folder name here
-kin_store_size = sim_len + 10.0
-sim_steps = int(sim_len*rate)
-dt = 1/rate
 
-if log_temp and not fake_real_time:
-    from gpiozero import CPUTemperature
-    cpu = CPUTemperature()
+if not offline:
+    def on_message(ws, message):
+        print("Received message: ", message)
+        # Put the received message into the queue
+        json.loads(q.put(message))
+
+    def on_error(ws, error):
+        print("Error: ", error)
+
+    def on_close(ws, close_status_code, close_msg):
+        print("### closed ###")
+
+    def on_open(ws):
+        print("WebSocket opened")
+
+    def websocket_thread():
+        ws = websocket.WebSocketApp(WS_URL,
+                                    on_open=on_open,
+                                    on_message=on_message,
+                                    on_error=on_error,
+                                    on_close=on_close)
+
+        ws.run_forever()
+
+    thread = threading.Thread(target=websocket_thread)
+    thread.start()
+
+dt = 1/rate
 
 while(script_live):
     while(q.qsize()>0): # clearing the queues that may have old messages
         q.get()
-    while(b.qsize()>0):
-        b.get()
     print("Ready to initialize...")
-    init_time, Qi, head_err = q.get()
+    if offline:
+        packets = convert_csv_to_list_of_packets(str(offline_data/offline_data_name))
+        for idx, packet in enumerate(packets):
+            q.put([idx*dt,packet])
+        q.put("done")
+    time_sample, data = q.get()
+    if len(data["raw_data"]) != len(sensors):
+        raise ValueError("The number of sensors and the number of sensors in the streamed data don't jive.")
     # calibrate model and save
-    quat2sto_single(Qi, header_text, sto_filename, 0., rate, sensor_ind_list)
-    visualize_init = False
-    sensor_to_opensim_rotations = Vec3(-np.pi/2,head_err,0)
+    quat2sto_single(data, sensors, sto_filename, time_sample, rate)
+    visualize_init = True
+    head_err = calculate_heading_error(data, sensors, None)
+    sensor_to_opensim_rotations = Vec3(0,0,0)
     imuPlacer = osim.IMUPlacer();
-    imuPlacer.set_model_file(uncal_model_filename);
+    imuPlacer.set_model_file(str(uncal_model_filename));
     imuPlacer.set_orientation_file_for_calibration(sto_filename);
     imuPlacer.set_sensor_to_opensim_rotations(sensor_to_opensim_rotations);
+    imuPlacer.set_base_imu_label(base_imu)
+    imuPlacer.set_base_heading_axis(base_imu_axis)
     imuPlacer.run(visualize_init);
     model = imuPlacer.getCalibratedModel();
-    model.printToXML(model_filename)
+    model.printToXML(str(model_filename))
 
     # Initialize model
-    rt_samples = int(kin_store_size*rate)
+    rt_samples = int(10000*rate)
     #kin_mat = np.zeros((rt_samples, 39)) # 39 is the number of joints stored in the .sto files accessible at each time step
     time_vec = np.zeros((rt_samples,2))
     coordinates = model.getCoordinateSet()
@@ -94,7 +129,7 @@ while(script_live):
     # Initialize simulation
     quatTable = osim.TimeSeriesTableQuaternion(sto_filename)
     orientationsData = osim.OpenSenseUtilities.convertQuaternionsToRotations(quatTable)
-    oRefs = osim.OrientationsReference(orientationsData)
+    oRefs = osim.BufferedOrientationsReference(orientationsData)
     init_state = model.initSystem()
     mRefs = osim.MarkersReference()
     coordinateReferences = osim.SimTKArrayCoordinateReference()
@@ -102,7 +137,7 @@ while(script_live):
         model.setUseVisualizer(True)
     model.initSystem()
     s0 = init_state
-    ikSolver = osim.InverseKinematicsSolver(model, mRefs, oRefs, coordinateReferences, constraint_var)
+    ikSolver = osim.InverseKinematicsSolverRT(model, mRefs, oRefs, coordinateReferences, constraint_var)
     ikSolver.setAccuracy = accuracy
     s0.setTime(0.)
     ikSolver.assemble(s0)
@@ -117,37 +152,22 @@ while(script_live):
     add_time = 0.
     running = True
     start_sim_time = time.time()
-    q.put(['received']) # tell IMUs to start passing real-time data
     print("Starting recording...")
     while(running):
-        if (b.qsize() > 0) or t == sim_steps: # new button press so we should save the data and restart the sim
-            if t == sim_steps: # tell IMUs to reset too
-                b.put(["done"])
-            if log_data:
-                ik_results = ikReporter.getTable()
-                osim.STOFileAdapter.write(ik_results, save_dir+save_file+str(file_cnt)+'.sto')
-                np.save(save_dir+ts_file+str(file_cnt)+'.npy', time_vec[:t,:])
-                if log_temp and not fake_real_time:
-                    np.save(save_dir+'/tempdata_'+str(file_cnt)+'.npy', temp_data)
-                file_cnt += 1
-            print("Time used in IK:",st,"Total time:",time.time()-start_sim_time)
-            time.sleep(0.5)
-            if fake_real_time:
-                print("Saved the offline files...")
+        for _ in range(2):
+            queue_values = q.get()
+            if queue_values == "done":
                 exit()
-            else:
-                break # exit loop and wait until button pressed for reset
-        time_stamp, Qi = q.get()
+        time_sample, data = queue_values
         add_time = time.time()
         time_s = t*dt
-        quat2sto_single(Qi, header_text, sto_filename, time_s, rate, sensor_ind_list) # store next line of fake online data to one-line STO
+        quat2sto_single(data, sensors, sto_filename,time_sample, rate) # store next line of fake online data to one-line STO
         
         # IK
         quatTable = osim.TimeSeriesTableQuaternion(sto_filename)
         orientationsData = osim.OpenSenseUtilities.convertQuaternionsToRotations(quatTable)
-        rowVecView = orientationsData.getNearestRow(time_s)
-        rowVec = osim.RowVectorRotation(rowVecView)
-        ikSolver.addOrientationValuesToTrack(time_s+dt, rowVec)
+        rowVecView = orientationsData.getNearestRow(time_sample)
+        ikSolver.updateOrientationData(time_s+dt, rowVecView)
         s0.setTime(time_s+dt)
         ikSolver.track(s0)
         if visualize:
@@ -160,12 +180,7 @@ while(script_live):
             ### ADD CUSTOM CODE HERE FOR REAL-TIME APPLICATIONS ###
 
         st += time.time() - add_time
-        time_vec[t,0] = time_stamp
-        time_vec[t,1] = time.time()-time_stamp # delay
-        if (t%int(rate)==0):
-            if fake_real_time: # log temp data
-                print(np.round(t*100.0/fake_data_len,1),'%')
-            elif log_temp:
-                temp_data.append(cpu.temperature)
+        time_vec[t,0] = time_sample
+        time_vec[t,1] = time.time()-time_sample # delay
             #print("Delay (ms):", 1000.*np.mean(time_vec[t-int(rate):t,1],axis=0))
         t += 1
