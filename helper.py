@@ -5,7 +5,9 @@ import os
 import csv
 import datetime
 from ahrs.common.orientation import q2R
-from transforms3d.taitbryan import quat2euler
+from transforms3d.taitbryan import quat2euler, euler2quat
+from transforms3d.quaternions import qmult, qinverse
+
 
 # Function to write data from line_ind to a .sto file
 def quat2sto_single(sensor_data, sensors, file_dir, t_step, rate):
@@ -21,7 +23,7 @@ def quat2sto_single(sensor_data, sensors, file_dir, t_step, rate):
         f.write(header_text)
         f.write("{}".format(t_step))
         for sensor in range(len(sensors)):
-            f.write("\t"+",".join([sensor_data["raw_data"][sensor][f"Quat{i+1}"] for i in range(4)]))
+            f.write("\t"+",".join([str(sensor_data["raw_data"][sensor][f"Quat{i+1}"]) for i in range(4)]))
         f.write("\n")
 
 # Function to read sto file to load fake real time data in numpy array
@@ -84,6 +86,16 @@ def convert_csv_to_list_of_packets(csv_file_path):
             if packet["raw_data"]:  # Only add the packet if there is raw data
                 list_of_packets.append(packet)
     return list_of_packets
+
+def transform_data(data):
+    transform_quat = euler2quat(0,0,-np.pi/2)
+    for sensor_idx, sensor in enumerate(data["raw_data"]):
+        quat = [float(sensor[f"Quat{i+1}"]) for i in range(4)]
+        new_quat = qmult(transform_quat, quat)
+        for i in range(4):
+            data["raw_data"][sensor_idx][f"Quat{i+1}"] = new_quat[i]
+    return data
+
 
 def compute_quat(all_data, len_sensor_list, quat_cal_offset, rot_inds, num_sensors=5, t_offset=0, signals_per_sensor=6, beta=0.2*np.ones(5), rate=60.0, verbose=False, beta_init=0.4):
     d2g = ahrs.common.DEG2RAD   # Constant to convert degrees to radians
