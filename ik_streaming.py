@@ -125,9 +125,6 @@ if __name__ == '__main__':
         imuPlacer.run(visualize_init);
         model = imuPlacer.getCalibratedModel();
         model.printToXML(str(model_filename))
-        bodies = model.getBodySet()
-        for body in bodies:
-           print(body.getAbsolutePathString())
 
         # Initialize model
         rt_samples = int(10000*rate)
