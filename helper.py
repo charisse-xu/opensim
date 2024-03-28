@@ -96,6 +96,11 @@ def transform_data(data):
             data["raw_data"][sensor_idx][f"Quat{i+1}"] = new_quat[i]
     return data
 
+def add_synthetic_pelvis_imu(data, type):
+    if type == "trunk":
+        data["raw_data"].append(data["raw_data"][6])
+    return data
+
 
 def compute_quat(all_data, len_sensor_list, quat_cal_offset, rot_inds, num_sensors=5, t_offset=0, signals_per_sensor=6, beta=0.2*np.ones(5), rate=60.0, verbose=False, beta_init=0.4):
     d2g = ahrs.common.DEG2RAD   # Constant to convert degrees to radians

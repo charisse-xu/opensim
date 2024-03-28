@@ -47,7 +47,7 @@
 							<!--Translational offset (in meters) of this frame's origin from the parent frame's origin, expressed in the parent frame.-->
 							<translation>-0.070699999999999999 0 0</translation>
 							<!--Orientation offset (in radians) of this frame in its parent frame, expressed as a frame-fixed x-y-z rotation sequence.-->
-							<orientation>1.4800790497548602 0.73172678080421827 -1.5795059736930002</orientation>
+							<orientation>2.6531925318531746 0.14632470452042248 0.2232695055120428</orientation>
 						</PhysicalOffsetFrame>
 					</components>
 					<!--The geometry used to display the axes of this Frame.-->
@@ -414,7 +414,7 @@
 							<!--Translational offset (in meters) of this frame's origin from the parent frame's origin, expressed in the parent frame.-->
 							<translation>0 -0.17000000000000001 0</translation>
 							<!--Orientation offset (in radians) of this frame in its parent frame, expressed as a frame-fixed x-y-z rotation sequence.-->
-							<orientation>1.4405968883103182 1.3816476231693031 -1.4247174592056295</orientation>
+							<orientation>1.8171529894010743 1.2218570248020506 1.2455133883728964</orientation>
 						</PhysicalOffsetFrame>
 					</components>
 					<!--The geometry used to display the axes of this Frame.-->
@@ -723,7 +723,7 @@
 							<!--Translational offset (in meters) of this frame's origin from the parent frame's origin, expressed in the parent frame.-->
 							<translation>0 -0.1867 0</translation>
 							<!--Orientation offset (in radians) of this frame in its parent frame, expressed as a frame-fixed x-y-z rotation sequence.-->
-							<orientation>0.020313226021572282 0.5171504473710401 -0.14015377922672234</orientation>
+							<orientation>2.7791791234612195 1.4536998211570835 0.3944828234626801</orientation>
 						</PhysicalOffsetFrame>
 					</components>
 					<!--The geometry used to display the axes of this Frame.-->
@@ -1039,7 +1039,7 @@
 							<!--Translational offset (in meters) of this frame's origin from the parent frame's origin, expressed in the parent frame.-->
 							<translation>0.10000000000000001 0.029999999999999999 0</translation>
 							<!--Orientation offset (in radians) of this frame in its parent frame, expressed as a frame-fixed x-y-z rotation sequence.-->
-							<orientation>-1.0650942722847581 0.51225413623535043 1.3768378988903991</orientation>
+							<orientation>-1.0113804362207157 0.33171349950981327 -2.0587114570630378</orientation>
 						</PhysicalOffsetFrame>
 					</components>
 					<!--The geometry used to display the axes of this Frame.-->
@@ -1133,7 +1133,7 @@
 							<!--Translational offset (in meters) of this frame's origin from the parent frame's origin, expressed in the parent frame.-->
 							<translation>0 -0.17000000000000001 0</translation>
 							<!--Orientation offset (in radians) of this frame in its parent frame, expressed as a frame-fixed x-y-z rotation sequence.-->
-							<orientation>2.8498373594781046 1.0542594507468066 -2.8987745974188264</orientation>
+							<orientation>2.6416292679096065 0.95965848605644977 0.31777745604951391</orientation>
 						</PhysicalOffsetFrame>
 					</components>
 					<!--The geometry used to display the axes of this Frame.-->
@@ -1442,7 +1442,7 @@
 							<!--Translational offset (in meters) of this frame's origin from the parent frame's origin, expressed in the parent frame.-->
 							<translation>0 -0.1867 0</translation>
 							<!--Orientation offset (in radians) of this frame in its parent frame, expressed as a frame-fixed x-y-z rotation sequence.-->
-							<orientation>3.032533310249947 1.250208290433525 -2.9153855339753147</orientation>
+							<orientation>3.0204261562505619 1.0596257553850499 0.14292773891034283</orientation>
 						</PhysicalOffsetFrame>
 					</components>
 					<!--The geometry used to display the axes of this Frame.-->
@@ -1758,7 +1758,7 @@
 							<!--Translational offset (in meters) of this frame's origin from the parent frame's origin, expressed in the parent frame.-->
 							<translation>0.10000000000000001 0.029999999999999999 0</translation>
 							<!--Orientation offset (in radians) of this frame in its parent frame, expressed as a frame-fixed x-y-z rotation sequence.-->
-							<orientation>-2.1771733577473156 0.080371737751231284 2.4161231540312316</orientation>
+							<orientation>-2.1019868866271536 0.40304932884578526 -1.2023575084565283</orientation>
 						</PhysicalOffsetFrame>
 					</components>
 					<!--The geometry used to display the axes of this Frame.-->
@@ -1837,6 +1837,24 @@
 					<inertia>0.0001 0.00020000000000000001 0.001 0 0 0</inertia>
 				</Body>
 				<Body name="torso">
+					<!--List of components that this component owns and serializes.-->
+					<components>
+						<PhysicalOffsetFrame name="torso_imu">
+							<!--The geometry used to display the axes of this Frame.-->
+							<FrameGeometry name="frame_geometry">
+								<!--Path to a Component that satisfies the Socket 'frame' of type Frame.-->
+								<socket_frame>..</socket_frame>
+								<!--Scale factors in X, Y, Z directions respectively.-->
+								<scale_factors>0.20000000000000001 0.20000000000000001 0.20000000000000001</scale_factors>
+							</FrameGeometry>
+							<!--Path to a Component that satisfies the Socket 'parent' of type C (description: The parent frame to this frame.).-->
+							<socket_parent>..</socket_parent>
+							<!--Translational offset (in meters) of this frame's origin from the parent frame's origin, expressed in the parent frame.-->
+							<translation>-0.029999999999999999 0.32000000000000001 0</translation>
+							<!--Orientation offset (in radians) of this frame in its parent frame, expressed as a frame-fixed x-y-z rotation sequence.-->
+							<orientation>-1.5055168844217532 1.1704291700987148 -1.525213085843067</orientation>
+						</PhysicalOffsetFrame>
+					</components>
 					<!--The geometry used to display the axes of this Frame.-->
 					<FrameGeometry name="frame_geometry">
 						<!--Path to a Component that satisfies the Socket 'frame' of type Frame.-->
@@ -5375,13 +5393,13 @@
 					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which the IMU is attached.).-->
 					<socket_frame>/bodyset/calcn_l/calcn_l_imu</socket_frame>
 				</IMU>
+				<IMU name="tibia_r_imu">
+					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which the IMU is attached.).-->
+					<socket_frame>/bodyset/tibia_r/tibia_r_imu</socket_frame>
+				</IMU>
 				<IMU name="tibia_l_imu">
 					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which the IMU is attached.).-->
 					<socket_frame>/bodyset/tibia_l/tibia_l_imu</socket_frame>
-				</IMU>
-				<IMU name="pelvis_imu">
-					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which the IMU is attached.).-->
-					<socket_frame>/bodyset/pelvis/pelvis_imu</socket_frame>
 				</IMU>
 				<IMU name="femur_r_imu">
 					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which the IMU is attached.).-->
@@ -5391,9 +5409,13 @@
 					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which the IMU is attached.).-->
 					<socket_frame>/bodyset/femur_l/femur_l_imu</socket_frame>
 				</IMU>
-				<IMU name="tibia_r_imu">
+				<IMU name="pelvis_imu">
 					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which the IMU is attached.).-->
-					<socket_frame>/bodyset/tibia_r/tibia_r_imu</socket_frame>
+					<socket_frame>/bodyset/pelvis/pelvis_imu</socket_frame>
+				</IMU>
+				<IMU name="torso_imu">
+					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which the IMU is attached.).-->
+					<socket_frame>/bodyset/torso/torso_imu</socket_frame>
 				</IMU>
 			</objects>
 			<groups />

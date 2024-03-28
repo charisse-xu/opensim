@@ -3,7 +3,7 @@
 import opensim as osim
 from opensim import Vec3
 import numpy as np
-from helper import quat2sto_single, sto2quat, calculate_heading_error, convert_csv_to_list_of_packets, transform_data
+from helper import quat2sto_single, sto2quat, calculate_heading_error, convert_csv_to_list_of_packets, transform_data, add_synthetic_pelvis_imu
 import helper as h
 import time
 import os
@@ -11,6 +11,7 @@ import sys
 import pathlib
 import threading
 import json
+import time
 # from multiprocessing import Process, Queue
 # from queue import Queue
 import websocket
@@ -21,9 +22,11 @@ import websocket
 import json
 from multiprocessing import Process, Queue
 
-WS_URL = "ws://192.168.137.1:5678/"
+WS_URL = "ws://192.168.1.126:5678/"
 
-# osim.Logger.setLevelString("Error")
+new_system = True
+
+osim.Logger.setLevelString("Error")
 
 def clear(q):
     try:
@@ -32,6 +35,7 @@ def clear(q):
     except:
         pass
 
+FIELDS = ["Sampletime", "Quat1", "Quat2", "Quat3", "Quat4"]
 
 def on_message(ws, message):
     # Put the received message into the queue
@@ -45,6 +49,13 @@ def on_close(ws, close_status_code, close_msg):
 
 def on_open(ws):
     print("WebSocket opened")
+    if new_system:
+        sensor_format = [[i, sensor] for sensor in FIELDS for i in range(8)]
+        message = json.dumps(sensor_format)
+        ws.send(message)
+        time.sleep(2)
+        print("sent message to let system know what to send.")
+
 
 def websocket_process(q):
     def on_message(ws, message):
@@ -64,7 +75,7 @@ if __name__ == '__main__':
     real_time = True # set to True for using the kinematics in the python script for real-time applications
 
     # Parameters for IK solver
-    offline = True # True to run offline, False to record data and run online
+    offline = False # True to run offline, False to record data and run online
     log_data = True # if true save all IK outputs, else only use those in reporter_list for easier custom coding
     home_dir = pathlib.Path(__file__).parent.resolve() # location of the main RealTimeKin folder
     uncal_model = 'Rajagopal_2015.osim'
@@ -74,13 +85,13 @@ if __name__ == '__main__':
     sto_filename = str(home_dir /'tiny_file.sto')
     visualize = True
     rate = 50.0 # samples hz of IMUs
-    accuracy = 0.001 # value tuned for accurate and fast IK solver
+    accuracy = 0.01 # value tuned for accurate and fast IK solver
     constraint_var = 10.0 # value tuned for accurate and fast IK solver
     init_time = 4.0 # seconds of data to initialize from
     # sensor_labels_full = ['pelvis_imu','torso_imu','femur_l_imu','tibia_l_imu','calcn_l_imu','femur_r_imu','tibia_r_imu','calcn_r_imu','humerus_l_imu','ulna_l_imu','hand_l_imu','humerus_r_imu','ulna_r_imu','hand_r_imu']
     # sensors = ["tibia_r_imu", "femur_r_imu"]
-    sensors = ['calcn_r_imu', 'calcn_l_imu', 'tibia_l_imu', 'pelvis_imu', 'femur_r_imu', 'femur_l_imu', 'tibia_r_imu' ]
-    base_imu = 'pelvis_imu'
+    sensors = ['calcn_r_imu', 'calcn_l_imu', 'tibia_r_imu', 'tibia_l_imu', 'femur_r_imu', 'femur_l_imu', "pelvis_imu", "torso_imu" ]
+    base_imu = 'torso_imu'
     base_imu_axis = "z"
     offline_data_name = "Full.csv"
 
@@ -101,17 +112,24 @@ if __name__ == '__main__':
     while(script_live):
         while(q.qsize()>0): # clearing the queues that may have old messages
             q.get()
+        break_timer = 0
+        while q.get()[1]["raw_data"][0] == {}:
+            q.get()
+            break_timer += 1
+            if break_timer > 1000:
+                exit()
         print("Ready to initialize...")
         if offline:
             packets = convert_csv_to_list_of_packets(str(offline_data/offline_data_name))
             for idx, packet in enumerate(packets):
                 q.put([idx*dt,packet])
             q.put("done")
-        time_sample, data = q.get(timeout=1)
-        if len(data["raw_data"]) != len(sensors):
-            raise ValueError("The number of sensors and the number of sensors in the streamed data don't jive.")
+        time_sample, data = q.get(timeout=4)
         # calibrate model and save
         data = transform_data(data)
+        # data = add_synthetic_pelvis_imu(data, "trunk")
+        if len(data["raw_data"]) != len(sensors):
+            raise ValueError("The number of sensors and the number of sensors in the streamed data don't jive.")
         quat2sto_single(data, sensors, sto_filename, time_sample, rate)
         visualize_init = False
         head_err = calculate_heading_error(data, sensors, None)
@@ -168,11 +186,12 @@ if __name__ == '__main__':
         print("Starting recording...")
         while(running):
             for _ in range(5):
-                queue_values = q.get(timeout=1)
+                queue_values = q.get(timeout=2)
                 if queue_values == "done":
                     exit()
             time_sample, data = queue_values
             data = transform_data(data)
+            # data = add_synthetic_pelvis_imu(data, "trunk")
             add_time = time.time()
             time_s = t*dt
             quat2sto_single(data, sensors, sto_filename,time_sample, rate) # store next line of fake online data to one-line STO
