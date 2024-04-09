@@ -169,6 +169,11 @@ def calculate_heading_error(data, sensors, transformations):
         quat = [float(data["raw_data"][sensor][f"Quat{i+1}"]) for i in range(4)]
         angles[sensor] = quat2euler(quat)[2]
     return angles.mean()
+
+def parallelIK(ikSolver, s0, ik, time_stamp):
+    ikSolver.track(s0)
+    ik.put([time.time()-time_stamp])
+    time.sleep(0.005)
     
 
 
