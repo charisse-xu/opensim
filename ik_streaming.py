@@ -4,7 +4,7 @@ import opensim as osim
 from opensim import Vec3
 import numpy as np
 from helper import quat2sto_single, sto2quat, calculate_heading_error, convert_csv_to_list_of_packets, transform_data, add_synthetic_pelvis_imu
-from websocket_process import websocket_process
+from DataStreamClient import DataStreamClient
 import time
 import pathlib
 import argparse
@@ -60,7 +60,10 @@ def main(ws_url):
     q = Queue() # queue for IMU messages
 
     if not offline:
-        process = Process(target=websocket_process, args=(q,args.address))
+        fields = ["Sampletime", "Quat1", "Quat2", "Quat3", "Quat4"]
+        requested_data = [[i, sensor] for sensor in fields for i in range(8)]
+        client = DataStreamClient(args.address, q, requested_data=requested_data)
+        process = Process(target=client.run_forever)
         process.start()
     dt = 1/rate
 
