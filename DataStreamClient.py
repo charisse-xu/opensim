@@ -15,12 +15,6 @@ class DataStreamClient:
         queue (queue.Queue): A queue to store the data received from 
             the server.
         requested_data (list): Data to send to the server upon connection. 
-            This should be a list of lists. The first element in the list 
-            will be the sensor (int) and the second will be the text of 
-            the value that you want. For example, `[0, 'Accel_x']` will get
-            the x axis value of the accelerometer for the first sensor. 
-            If you want to get custom parameters, you can use the `None` 
-            keyword like `[None, "angle"]`
         ws_url (str): The URL for the WebSocket connection.
     """
 
@@ -36,7 +30,12 @@ class DataStreamClient:
             port (int, optional): The port on which the WebSocket server is 
                 running. Defaults to 5678.
             requested_data (list): Data to send to the server upon connection.
-                See class for mode details. 
+                This should be a list of lists. The first element in the list 
+                will be the sensor (int) and the second will be the text of 
+                the value that you want. For example, `[0, 'Accel_x']` will get
+                the x axis value of the accelerometer for the first sensor. 
+                If you want to get custom parameters, you can use the `None` 
+                keyword like `[None, "angle"]`
         """
         self.ip_address = ip_address
         self.port = port
