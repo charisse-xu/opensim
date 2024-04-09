@@ -6,20 +6,8 @@ import numpy as np
 from helper import quat2sto_single, sto2quat, calculate_heading_error, convert_csv_to_list_of_packets, transform_data, add_synthetic_pelvis_imu
 from websocket_process import websocket_process
 import time
-import os
-import sys
 import pathlib
-import threading
-import json
-import time
 import argparse
-# from multiprocessing import Process, Queue
-# from queue import Queue
-import websocket
-
-import multiprocessing
-import websocket
-import json
 from multiprocessing import Process, Queue
 
 osim.Logger.setLevelString("Error")
@@ -187,8 +175,6 @@ def main(ws_url):
 
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()  # For Windows support
-
     parser = argparse.ArgumentParser(description="Estimates kinematics from IMU data using a musculoskeletal model.")
     parser.add_argument('--address', type=str, help='IP address (e.g., 192.168.137.1)', required=True)
     args = parser.parse_args()
