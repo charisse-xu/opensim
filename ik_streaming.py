@@ -12,6 +12,7 @@ import pathlib
 import threading
 import json
 import time
+import argparse
 # from multiprocessing import Process, Queue
 # from queue import Queue
 import websocket
@@ -20,10 +21,6 @@ import multiprocessing
 import websocket
 import json
 from multiprocessing import Process, Queue
-
-WS_URL = "ws://192.168.1.126:5678/"
-
-new_system = True
 
 osim.Logger.setLevelString("Error")
 
@@ -36,27 +33,24 @@ def clear(q):
 
 FIELDS = ["Sampletime", "Quat1", "Quat2", "Quat3", "Quat4"]
 
-def on_message(ws, message):
-    # Put the received message into the queue
-    q.put((0, json.loads(message)))
+def websocket_process(q, ip_address):
+    WS_URL = f"ws://{ip_address}:5678/"
+    def on_message(ws, message):
+        # Put the received message into the queue
+        q.put((0, json.loads(message)))
 
-def on_error(ws, error):
-    print("Error: ", error)
+    def on_error(ws, error):
+        print("Error: ", error)
 
-def on_close(ws, close_status_code, close_msg):
-    print("### closed ###")
+    def on_close(ws, close_status_code, close_msg):
+        print("### closed ###")
 
-def on_open(ws):
-    print("WebSocket opened")
-    if new_system:
+    def on_open(ws):
+        print("WebSocket opened")
         sensor_format = [[i, sensor] for sensor in FIELDS for i in range(8)]
         message = json.dumps(sensor_format)
         ws.send(message)
         time.sleep(2)
-        print("sent message to let system know what to send.")
-
-
-def websocket_process(q):
     def on_message(ws, message):
         q.put((0, json.loads(message)))
 
@@ -68,8 +62,12 @@ def websocket_process(q):
 
     ws.run_forever()
 
-if __name__ == '__main__':
-    multiprocessing.freeze_support()  # For Windows support
+def main(ws_url):
+    
+    parser = argparse.ArgumentParser(description="Estimates kinematics from IMU data using a musculoskeletal model.")
+    parser.add_argument('--address', type=str, help='IP address (e.g., 192.168.137.1)', required=True)
+    args = parser.parse_args()
+
     # Customize real-time kinematics for use by setting flag and looking at corresponding code below.
     real_time = True # set to True for using the kinematics in the python script for real-time applications
 
@@ -104,7 +102,7 @@ if __name__ == '__main__':
     q = Queue() # queue for IMU messages
 
     if not offline:
-        process = Process(target=websocket_process, args=(q,))
+        process = Process(target=websocket_process, args=(q,args.address))
         process.start()
     dt = 1/rate
 
@@ -216,3 +214,13 @@ if __name__ == '__main__':
             time_vec[t,1] = time.time()-time_sample # delay
                 #print("Delay (ms):", 1000.*np.mean(time_vec[t-int(rate):t,1],axis=0))
             t += 1
+
+
+if __name__ == '__main__':
+    multiprocessing.freeze_support()  # For Windows support
+
+    parser = argparse.ArgumentParser(description="Estimates kinematics from IMU data using a musculoskeletal model.")
+    parser.add_argument('--address', type=str, help='IP address (e.g., 192.168.137.1)', required=True)
+    args = parser.parse_args()
+
+    main(args.address)
