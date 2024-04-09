@@ -15,7 +15,6 @@ import time
 # from multiprocessing import Process, Queue
 # from queue import Queue
 import websocket
-import workers # define the worker functions in this .py file
 
 import multiprocessing
 import websocket
