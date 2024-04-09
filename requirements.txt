@@ -1,0 +1,3 @@
+AHRS
+transforms3d
+websocket_client
