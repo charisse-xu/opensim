@@ -59,7 +59,7 @@ def main(args):
 
     if not offline:
         fields = ["Sampletime", "Quat1", "Quat2", "Quat3", "Quat4"]
-        requested_data = [[i, sensor] for sensor in fields for i in range(8)]
+        requested_data = [[i, sensor] for sensor in fields for i in range(len(sensors))]
         client = DataStreamClient(args.address, q, requested_data=requested_data)
         process = Process(target=client.run_forever)
         process.start()
