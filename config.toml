@@ -1,0 +1,8 @@
+# This comment contains the list of sensors
+# In the "sensors = " line below, you can order any of the following sensors in any order as long 
+# as they match the data coming out of the app. 
+# Please preserve the comment so that you can copy/paste to change the sensors used.
+# ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
+sensors = ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
+# The base IMU is what all of the orientations is based off of. You can use one of the sensor names.
+base_imu = "pelvis_imu"

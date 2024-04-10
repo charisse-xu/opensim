@@ -8,6 +8,7 @@ from DataStreamClient import DataStreamClient
 import time
 import pathlib
 import argparse
+import tomli
 from multiprocessing import Process, Queue
 
 osim.Logger.setLevelString("Error")
@@ -26,7 +27,9 @@ def main(ws_url):
     parser.add_argument('--address', type=str, help='IP address (e.g., 192.168.137.1)', required=True)
     args = parser.parse_args()
 
-    # Customize real-time kinematics for use by setting flag and looking at corresponding code below.
+    with open("config.toml", "rb") as f:
+        config_data = tomli.load(f)
+
     real_time = True # set to True for using the kinematics in the python script for real-time applications
 
     # Parameters for IK solver
@@ -45,8 +48,8 @@ def main(ws_url):
     init_time = 4.0 # seconds of data to initialize from
     # sensor_labels_full = ['pelvis_imu','torso_imu','femur_l_imu','tibia_l_imu','calcn_l_imu','femur_r_imu','tibia_r_imu','calcn_r_imu','humerus_l_imu','ulna_l_imu','hand_l_imu','humerus_r_imu','ulna_r_imu','hand_r_imu']
     # sensors = ["tibia_r_imu", "femur_r_imu"]
-    sensors = ['calcn_r_imu', 'calcn_l_imu', 'tibia_r_imu', 'tibia_l_imu', 'femur_r_imu', 'femur_l_imu', "pelvis_imu", "torso_imu" ]
-    base_imu = 'torso_imu'
+    sensors = config_data["sensors"]
+    base_imu = config_data["base_imu"]
     base_imu_axis = "z"
     offline_data_name = "Full.csv"
 
