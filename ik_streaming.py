@@ -18,6 +18,7 @@ from multiprocessing import Process, Queue
 
 osim.Logger.setLevelString("Error")
 
+
 def main(args):
 
     with open(args.config or "config.toml", "rb") as f:
@@ -25,19 +26,13 @@ def main(args):
 
     real_time = True  # set to True for using the kinematics in the python script for real-time applications
     # Parameters for IK solver
-    offline = config_data[
-        "offline"
-    ]  # True to run offline, False to record data and run online
+    offline = config_data["offline"]
     log_data = True  # if true save all IK outputs, else only use those in reporter_list for easier custom coding
-    home_dir = pathlib.Path(
-        __file__
-    ).parent.resolve()  # location of the main RealTimeKin folder
+    home_dir = pathlib.Path(__file__).parent.resolve()  # location of the main folder
     uncal_model = "Rajagopal_2015.osim"
     uncal_model_filename = home_dir / uncal_model
     model_filename = home_dir / ("calibrated_" + uncal_model)
-    offline_data = (
-        home_dir / "offline/"
-    )  # test_data.npy'#'test_IMU_data.npy'#'MT_012005D6_009-001_orientations.sto'
+    offline_data = home_dir / "offline/"
     sto_filename = str(home_dir / "temp_file.sto")
     visualize = True
     rate = 20.0  # samples hz of IMUs
@@ -71,7 +66,7 @@ def main(args):
     dt = 1 / rate
 
     while script_live:
-        while q.qsize() > 0:  # clearing the queues that may have old messages
+        while q.qsize() > 0:
             q.get()
         print("Ready to initialize...")
         if offline:
