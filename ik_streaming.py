@@ -5,11 +5,9 @@ from opensim import Vec3
 import numpy as np
 from helper import (
     quat2sto_single,
-    sto2quat,
     calculate_heading_error,
     convert_csv_to_list_of_packets,
-    transform_data,
-    add_synthetic_pelvis_imu,
+    transform_data
 )
 from DataStreamClient import DataStreamClient
 import time
