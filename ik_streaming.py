@@ -25,9 +25,12 @@ def main(ws_url):
     
     parser = argparse.ArgumentParser(description="Estimates kinematics from IMU data using a musculoskeletal model.")
     parser.add_argument('--address', type=str, help='IP address (e.g., 192.168.137.1)', required=True)
+    parser.add_argument('--config', type=str, help='Full path of config file. If not supplied, it will use the default config file')
+
     args = parser.parse_args()
 
-    with open("config.toml", "rb") as f:
+    
+    with open(args.config or "config.toml", "rb") as f:
         config_data = tomli.load(f)
 
     real_time = True # set to True for using the kinematics in the python script for real-time applications
@@ -45,12 +48,9 @@ def main(ws_url):
     rate = 50.0 # samples hz of IMUs
     accuracy = 0.01 # value tuned for accurate and fast IK solver
     constraint_var = 10.0 # value tuned for accurate and fast IK solver
-    init_time = 4.0 # seconds of data to initialize from
-    # sensor_labels_full = ['pelvis_imu','torso_imu','femur_l_imu','tibia_l_imu','calcn_l_imu','femur_r_imu','tibia_r_imu','calcn_r_imu','humerus_l_imu','ulna_l_imu','hand_l_imu','humerus_r_imu','ulna_r_imu','hand_r_imu']
-    # sensors = ["tibia_r_imu", "femur_r_imu"]
-    sensors = config_data["sensors"]
-    base_imu = config_data["base_imu"]
-    base_imu_axis = "z"
+    sensors = config_data["sensors"] # See config.toml for sensor definitions
+    base_imu = config_data["base_imu"] # See config.toml for base imu definitions
+    base_imu_axis = config_data["base_imu_axis"] # See config.toml for definitions
     offline_data_name = "Full.csv"
 
     # Initialize the quaternions
