@@ -12,9 +12,7 @@ from helper import (
 from DataStreamClient import DataStreamClient
 from ConfigManager import Config
 import time
-import pathlib
 import argparse
-import tomli
 from multiprocessing import Process, Queue
 
 osim.Logger.setLevelString("Error")
@@ -23,8 +21,7 @@ osim.Logger.setLevelString("Error")
 def main(args):
     config = Config(args)
     script_live = True
-    t = 0
-    q = Queue()  # queue for IMU messages
+    q = Queue()  # queue for quaternion data
 
     if not config.offline:
         fields = ["Sampletime", "Quat1", "Quat2", "Quat3", "Quat4"]
@@ -45,7 +42,7 @@ def main(args):
             for idx, packet in enumerate(packets):
                 q.put([idx * dt, packet])
             q.put("done")
-        time_sample, data = q.get(timeout=4)
+        time_sample, data = q.get(timeout=6)
         # calibrate model and save
         data = transform_data(data)
         # data = add_synthetic_pelvis_imu(data, "trunk")
@@ -122,9 +119,7 @@ def main(args):
             time_s = t * dt
             quat2sto_single(
                 data, config.sensors, config.sto_filename, time_sample, config.rate
-            )  # store next line of fake online data to one-line STO
-
-            # IK
+            ) 
             quatTable = osim.TimeSeriesTableQuaternion(config.sto_filename)
             orientationsData = osim.OpenSenseUtilities.convertQuaternionsToRotations(
                 quatTable
