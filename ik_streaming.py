@@ -20,15 +20,6 @@ from multiprocessing import Process, Queue
 
 osim.Logger.setLevelString("Error")
 
-
-def clear(q):
-    try:
-        while True:
-            q.get_nowait()
-    except:
-        pass
-
-
 def main(args):
 
     with open(args.config or "config.toml", "rb") as f:
