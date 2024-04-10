@@ -40,7 +40,7 @@ def main(ws_url):
     uncal_model_filename = home_dir / uncal_model
     model_filename = home_dir / ('calibrated_' + uncal_model)
     offline_data = home_dir / 'offline/'#test_data.npy'#'test_IMU_data.npy'#'MT_012005D6_009-001_orientations.sto'
-    sto_filename = str(home_dir /'tiny_file.sto')
+    sto_filename = str(home_dir /'temp_file.sto')
     visualize = True
     rate = 50.0 # samples hz of IMUs
     accuracy = 0.01 # value tuned for accurate and fast IK solver
