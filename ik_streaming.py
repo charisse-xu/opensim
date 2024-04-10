@@ -20,23 +20,14 @@ def clear(q):
     except:
         pass
 
+def main(args):
 
-def main(ws_url):
-    
-    parser = argparse.ArgumentParser(description="Estimates kinematics from IMU data using a musculoskeletal model.")
-    parser.add_argument('--address', type=str, help='IP address (e.g., 192.168.137.1)', required=True)
-    parser.add_argument('--config', type=str, help='Full path of config file. If not supplied, it will use the default config file')
-
-    args = parser.parse_args()
-
-    
     with open(args.config or "config.toml", "rb") as f:
         config_data = tomli.load(f)
 
     real_time = True # set to True for using the kinematics in the python script for real-time applications
-
     # Parameters for IK solver
-    offline = False # True to run offline, False to record data and run online
+    offline = config_data["offline"] # True to run offline, False to record data and run online
     log_data = True # if true save all IK outputs, else only use those in reporter_list for easier custom coding
     home_dir = pathlib.Path(__file__).parent.resolve() # location of the main RealTimeKin folder
     uncal_model = 'Rajagopal_2015.osim'
@@ -45,15 +36,16 @@ def main(ws_url):
     offline_data = home_dir / 'offline/'#test_data.npy'#'test_IMU_data.npy'#'MT_012005D6_009-001_orientations.sto'
     sto_filename = str(home_dir /'temp_file.sto')
     visualize = True
-    rate = 50.0 # samples hz of IMUs
+    rate = 20.0 # samples hz of IMUs
     accuracy = 0.01 # value tuned for accurate and fast IK solver
     constraint_var = 10.0 # value tuned for accurate and fast IK solver
     sensors = config_data["sensors"] # See config.toml for sensor definitions
     base_imu = config_data["base_imu"] # See config.toml for base imu definitions
     base_imu_axis = config_data["base_imu_axis"] # See config.toml for definitions
-    offline_data_name = "Full.csv"
-
-    # Initialize the quaternions
+    offline_data_name = config_data["offline_data_name"] if config_data["offline"] else None
+    if not args.address and not config_data["offline"]:
+        raise ValueError("It seems that the address arg is empty and the config file is set to online. Please either set the address or set the config to offline analysis")
+    
     file_cnt = 0
     save_dir_init = home_dir / 'recordings/' # appending folder name here
     save_file = '/recording_'
@@ -73,12 +65,6 @@ def main(ws_url):
     while(script_live):
         while(q.qsize()>0): # clearing the queues that may have old messages
             q.get()
-        break_timer = 0
-        while q.get()[1]["raw_data"][0] == {}:
-            q.get()
-            break_timer += 1
-            if break_timer > 1000:
-                exit()
         print("Ready to initialize...")
         if offline:
             packets = convert_csv_to_list_of_packets(str(offline_data/offline_data_name))
@@ -182,7 +168,8 @@ def main(ws_url):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Estimates kinematics from IMU data using a musculoskeletal model.")
-    parser.add_argument('--address', type=str, help='IP address (e.g., 192.168.137.1)', required=True)
+    parser.add_argument('--address', type=str, help='IP address (e.g., 192.168.137.1)')
+    parser.add_argument('--config', type=str, help='Full path of config file. If not supplied, it will use the default config file')
     args = parser.parse_args()
 
-    main(args.address)
+    main(args)
