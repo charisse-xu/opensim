@@ -1,3 +1,4 @@
+# For more info about TOML files, check out https://toml.io/en/v1.0.0
 # This comment contains the list of sensors
 # In the "sensors = " line below, you can order any of the following sensors in any order as long 
 # as they match the data coming out of the app. 
@@ -6,3 +7,10 @@
 sensors = ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
 # The base IMU is what all of the orientations is based off of. You can use one of the sensor names.
 base_imu = "pelvis_imu"
+# This is the axis that is pointed "Forward"
+base_imu_axis = "z"
+# This is if you want to use saved SageMotion data to process or to do live streaming
+offline = false
+# This is the offline file name that is present in the offline folder. I check if offline is 
+# used, so it is okay if this is blank.
+offline_data_name = "Full.csv"
