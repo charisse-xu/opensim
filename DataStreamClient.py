@@ -52,7 +52,11 @@ class DataStreamClient:
             message (str): The message received from the server.
         """
         data = json.loads(message)
-        self.queue.put((0, data))
+        if data:
+            self.queue.put((0, data))
+        else:
+            print("Data empty")
+        
 
     def _on_error(self, ws, error):
         """
