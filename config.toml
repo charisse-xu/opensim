@@ -14,3 +14,7 @@ offline = false
 # This is the offline file name that is present in the offline folder. I check if offline is 
 # used, so it is okay if this is blank.
 offline_data_name = "Full.csv"
+# This was tuned experimentially. Changing might be risky. 
+accuracy = 0.01 
+# This was tuned experimentially. Changing might be risky. 
+constraint_var = 10.0

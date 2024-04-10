@@ -10,6 +10,7 @@ from helper import (
     transform_data
 )
 from DataStreamClient import DataStreamClient
+from ConfigManager import Config
 import time
 import pathlib
 import argparse
@@ -20,58 +21,26 @@ osim.Logger.setLevelString("Error")
 
 
 def main(args):
-
-    with open(args.config or "config.toml", "rb") as f:
-        config_data = tomli.load(f)
-
-    real_time = True  # set to True for using the kinematics in the python script for real-time applications
-    # Parameters for IK solver
-    offline = config_data["offline"]
-    log_data = True  # if true save all IK outputs, else only use those in reporter_list for easier custom coding
-    home_dir = pathlib.Path(__file__).parent.resolve()  # location of the main folder
-    uncal_model = "Rajagopal_2015.osim"
-    uncal_model_filename = home_dir / uncal_model
-    model_filename = home_dir / ("calibrated_" + uncal_model)
-    offline_data = home_dir / "offline/"
-    sto_filename = str(home_dir / "temp_file.sto")
-    visualize = True
-    rate = 20.0  # samples hz of IMUs
-    accuracy = 0.01  # value tuned for accurate and fast IK solver
-    constraint_var = 10.0  # value tuned for accurate and fast IK solver
-    sensors = config_data["sensors"]  # See config.toml for sensor definitions
-    base_imu = config_data["base_imu"]  # See config.toml for base imu definitions
-    base_imu_axis = config_data["base_imu_axis"]  # See config.toml for definitions
-    offline_data_name = (
-        config_data["offline_data_name"] if config_data["offline"] else None
-    )
-    if not args.address and not config_data["offline"]:
-        raise ValueError(
-            "It seems that the address arg is empty and the config file is set to online. Please either set the address or set the config to offline analysis"
-        )
-
-    file_cnt = 0
-    save_dir_init = home_dir / "recordings/"  # appending folder name here
-    save_file = "/recording_"
-    ts_file = "/timestamp_"
+    config = Config(args.config)
     script_live = True
     t = 0
     q = Queue()  # queue for IMU messages
 
-    if not offline:
+    if not config.offline:
         fields = ["Sampletime", "Quat1", "Quat2", "Quat3", "Quat4"]
-        requested_data = [[i, sensor] for sensor in fields for i in range(len(sensors))]
+        requested_data = [[i, sensor] for sensor in fields for i in range(len(config.sensors))]
         client = DataStreamClient(args.address, q, requested_data=requested_data)
         process = Process(target=client.run_forever)
         process.start()
-    dt = 1 / rate
+    dt = 1 / config.rate
 
     while script_live:
         while q.qsize() > 0:
             q.get()
         print("Ready to initialize...")
-        if offline:
+        if config.offline:
             packets = convert_csv_to_list_of_packets(
-                str(offline_data / offline_data_name)
+                str(config.offline_data / config.offline_data_name)
             )
             for idx, packet in enumerate(packets):
                 q.put([idx * dt, packet])
@@ -80,23 +49,23 @@ def main(args):
         # calibrate model and save
         data = transform_data(data)
         # data = add_synthetic_pelvis_imu(data, "trunk")
-        if len(data["raw_data"]) != len(sensors):
+        if len(data["raw_data"]) != len(config.sensors):
             raise ValueError(
                 "The number of sensors and the number of sensors in the streamed data don't jive."
             )
-        quat2sto_single(data, sensors, sto_filename, time_sample, rate)
+        quat2sto_single(data, config.sensors, config.sto_filename, time_sample, config.rate)
         visualize_init = False
-        head_err = calculate_heading_error(data, sensors, None)
+        head_err = calculate_heading_error(data, config.sensors, None)
         sensor_to_opensim_rotations = Vec3(0, 0, 0)
         imuPlacer = osim.IMUPlacer()
-        imuPlacer.set_model_file(str(uncal_model_filename))
-        imuPlacer.set_orientation_file_for_calibration(sto_filename)
+        imuPlacer.set_model_file(str(config.uncal_model_filename))
+        imuPlacer.set_orientation_file_for_calibration(config.sto_filename)
         imuPlacer.set_sensor_to_opensim_rotations(sensor_to_opensim_rotations)
-        imuPlacer.set_base_imu_label(base_imu)
-        imuPlacer.set_base_heading_axis(base_imu_axis)
+        imuPlacer.set_base_imu_label(config.base_imu)
+        imuPlacer.set_base_heading_axis(config.base_imu_axis)
         imuPlacer.run(visualize_init)
         model = imuPlacer.getCalibratedModel()
-        model.printToXML(str(model_filename))
+        model.printToXML(str(config.model_filename))
 
         # Initialize model
         rt_samples = int(10000 * rate)
@@ -106,13 +75,13 @@ def main(args):
         ikReporter = osim.TableReporter()
         ikReporter.setName("ik_reporter")
         for coord in coordinates:
-            if log_data:
+            if config.log_data:
                 ikReporter.addToReport(coord.getOutput("value"), coord.getName())
         model.addComponent(ikReporter)
         model.finalizeConnections
 
         # Initialize simulation
-        quatTable = osim.TimeSeriesTableQuaternion(sto_filename)
+        quatTable = osim.TimeSeriesTableQuaternion(config.sto_filename)
         orientationsData = osim.OpenSenseUtilities.convertQuaternionsToRotations(
             quatTable
         )
@@ -120,17 +89,17 @@ def main(args):
         init_state = model.initSystem()
         mRefs = osim.MarkersReference()
         coordinateReferences = osim.SimTKArrayCoordinateReference()
-        if visualize:
+        if config.visualize:
             model.setUseVisualizer(True)
         model.initSystem()
         s0 = init_state
         ikSolver = osim.InverseKinematicsSolverRT(
-            model, mRefs, oRefs, coordinateReferences, constraint_var
+            model, mRefs, oRefs, coordinateReferences, config.constraint_var
         )
-        ikSolver.setAccuracy = accuracy
+        ikSolver.setAccuracy = config.accuracy
         s0.setTime(0.0)
         ikSolver.assemble(s0)
-        if visualize:  # initialize visualization
+        if config.visualize:  # initialize visualization
             model.getVisualizer().show(s0)
             model.getVisualizer().getSimbodyVisualizer().setShowSimTime(True)
 
@@ -153,11 +122,11 @@ def main(args):
             add_time = time.time()
             time_s = t * dt
             quat2sto_single(
-                data, sensors, sto_filename, time_sample, rate
+                data, config.sensors, config.sto_filename, time_sample, config.rate
             )  # store next line of fake online data to one-line STO
 
             # IK
-            quatTable = osim.TimeSeriesTableQuaternion(sto_filename)
+            quatTable = osim.TimeSeriesTableQuaternion(config.sto_filename)
             orientationsData = osim.OpenSenseUtilities.convertQuaternionsToRotations(
                 quatTable
             )
@@ -165,11 +134,11 @@ def main(args):
             ikSolver.updateOrientationData(time_s + dt, rowVecView)
             s0.setTime(time_s + dt)
             ikSolver.track(s0)
-            if visualize:
+            if config.visualize:
                 model.getVisualizer().show(s0)
             model.realizeReport(s0)
             if (
-                real_time
+                config.real_time
             ):  # The previous kinematics are pulled here and can be used to implement any custom real-time applications
                 rowind = ikReporter.getTable().getRowIndexBeforeTime(
                     (t + 1) * dt
