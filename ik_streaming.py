@@ -21,7 +21,7 @@ osim.Logger.setLevelString("Error")
 
 
 def main(args):
-    config = Config(args.config)
+    config = Config(args)
     script_live = True
     t = 0
     q = Queue()  # queue for IMU messages
@@ -68,7 +68,7 @@ def main(args):
         model.printToXML(str(config.model_filename))
 
         # Initialize model
-        rt_samples = int(10000 * rate)
+        rt_samples = int(10000 * config.rate)
         # kin_mat = np.zeros((rt_samples, 39)) # 39 is the number of joints stored in the .sto files accessible at each time step
         time_vec = np.zeros((rt_samples, 2))
         coordinates = model.getCoordinateSet()
@@ -101,7 +101,7 @@ def main(args):
         ikSolver.assemble(s0)
         if config.visualize:  # initialize visualization
             model.getVisualizer().show(s0)
-            model.getVisualizer().getSimbodyVisualizer().setShowSimTime(True)
+            model.getVisualizer().getSimbodyVisualizer().setShowSimTime(False)
 
         # IK solver loop
         t = 0  # number of steps
@@ -110,10 +110,9 @@ def main(args):
         add_time = 0.0
         running = True
         start_sim_time = time.time()
-        print("Starting recording...")
         while running:
-            for _ in range(5):
-                queue_values = q.get(timeout=2)
+            for _ in range(100//config.rate):
+                queue_values = q.get(timeout=5)
                 if queue_values == "done":
                     exit()
             time_sample, data = queue_values
@@ -137,17 +136,14 @@ def main(args):
             if config.visualize:
                 model.getVisualizer().show(s0)
             model.realizeReport(s0)
-            if (
-                config.real_time
-            ):  # The previous kinematics are pulled here and can be used to implement any custom real-time applications
-                rowind = ikReporter.getTable().getRowIndexBeforeTime(
-                    (t + 1) * dt
-                )  # most recent index in kinematics table
-                kin_step = (
-                    ikReporter.getTable().getRowAtIndex(rowind).to_numpy()
-                )  # joint angles for current time step as numpy array
-                # see the header of the saved .sto files for the names of the corresponding joints.
-                ### ADD CUSTOM CODE HERE FOR REAL-TIME APPLICATIONS ###
+            rowind = ikReporter.getTable().getRowIndexBeforeTime(
+                (t + 1) * dt
+            )  # most recent index in kinematics table
+            kin_step = (
+                ikReporter.getTable().getRowAtIndex(rowind).to_numpy()
+            )  # joint angles for current time step as numpy array
+            # see the header of the saved .sto files for the names of the corresponding joints.
+            ### ADD CUSTOM CODE HERE FOR REAL-TIME APPLICATIONS ###
 
             st += time.time() - add_time
             time_vec[t, 0] = time_sample

@@ -18,3 +18,9 @@ offline_data_name = "Full.csv"
 accuracy = 0.01 
 # This was tuned experimentially. Changing might be risky. 
 constraint_var = 10.0
+# This is the output data rate
+rate = 20
+# Whether we want to save the data 
+log_data = true
+# Whether you want to visualize the data using the 3d visualizer
+visualize = true
