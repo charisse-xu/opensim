@@ -134,7 +134,11 @@ def main(args):
             s0.setTime(time_s + dt)
             ikSolver.track(s0)
             if config.visualize:
-                model.getVisualizer().show(s0)
+                try:
+                    model.getVisualizer().show(s0)
+                except RuntimeError:
+                    print("It seemed that you closed the visualizer window. Quitting now.")
+                    exit()
             model.realizeReport(s0)
             rowind = ikReporter.getTable().getRowIndexBeforeTime(
                 (t + 1) * dt
