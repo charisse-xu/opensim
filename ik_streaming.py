@@ -107,6 +107,8 @@ def main(args):
         add_time = 0.0
         running = True
         start_sim_time = time.time()
+        while q.qsize() > 0:
+            q.get()
         while running:
             for _ in range(100//config.rate):
                 queue_values = q.get()
