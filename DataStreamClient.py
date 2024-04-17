@@ -91,6 +91,7 @@ class DataStreamClient:
         print("WebSocket opened")
         message = json.dumps(self.requested_data)
         ws.send(message)
+        print("Initial Message Sent")
         time.sleep(5)  # Sleep to ensure message is sent before continuing
 
     def run_forever(self):
