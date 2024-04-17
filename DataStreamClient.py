@@ -1,6 +1,10 @@
+import logging
 import json
 import time
 import websocket
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 class DataStreamClient:
     """
@@ -42,6 +46,7 @@ class DataStreamClient:
         self.queue = queue
         self.requested_data = requested_data
         self.ws_url = f"ws://{self.ip_address}:{self.port}/"
+        self.got_one_message = False
 
     def _on_message(self, ws, message):
         """
@@ -108,4 +113,4 @@ class DataStreamClient:
             on_error=self._on_error,
             on_close=self._on_close,
         )
-        ws.run_forever()
+        ws.run_forever(ping_interval=2)
