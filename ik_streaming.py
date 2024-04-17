@@ -110,6 +110,7 @@ def main(args):
         while q.qsize() > 0:
             q.get()
         while running:
+            print(f'Elements in Queue: {q.qsize():05}', end="\r")
             for _ in range(100//config.rate):
                 queue_values = q.get()
                 if queue_values == "done":
