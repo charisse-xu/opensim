@@ -42,7 +42,7 @@ def main(args):
             for idx, packet in enumerate(packets):
                 q.put([idx * dt, packet])
             q.put("done")
-        time_sample, data = q.get(timeout=6)
+        time_sample, data = q.get()
         # calibrate model and save
         data = transform_data(data)
         # data = add_synthetic_pelvis_imu(data, "trunk")
@@ -109,7 +109,7 @@ def main(args):
         start_sim_time = time.time()
         while running:
             for _ in range(100//config.rate):
-                queue_values = q.get(timeout=5)
+                queue_values = q.get()
                 if queue_values == "done":
                     exit()
             time_sample, data = queue_values
