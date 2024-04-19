@@ -121,4 +121,4 @@ class DataStreamClient:
             on_close=self._on_close,
             on_reconnect = self._on_reconnect,
         )
-        ws.run_forever(ping_interval=2)
+        ws.run_forever(ping_interval=1, reconnect=1)
