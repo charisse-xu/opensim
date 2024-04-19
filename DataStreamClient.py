@@ -57,10 +57,8 @@ class DataStreamClient:
             message (str): The message received from the server.
         """
         data = json.loads(message)
-        print(data)
         if data:
             self.queue.put((0, data))
-            print("Put in queue")
         else:
             print("Data empty")
         
