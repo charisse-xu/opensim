@@ -99,6 +99,14 @@ class DataStreamClient:
         ws.send(message)
         print("Initial Message Sent")
         time.sleep(5)  # Sleep to ensure message is sent before continuing
+    
+    def _on_reconnect(self, ws):
+        print("WebSocket reconnected")
+        message = json.dumps(self.requested_data)
+        ws.send(message)
+        print("Initial Message Sent again")
+        time.sleep(2)  # Sleep to ensure message is sent before continuing
+
 
     def run_forever(self):
         """
@@ -111,5 +119,6 @@ class DataStreamClient:
             on_message=self._on_message,
             on_error=self._on_error,
             on_close=self._on_close,
+            on_reconnect = self._on_reconnect,
         )
         ws.run_forever(ping_interval=2)
