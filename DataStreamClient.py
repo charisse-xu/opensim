@@ -83,6 +83,7 @@ class DataStreamClient:
             close_msg (str): The message regarding the closure.
         """
         print("### closed ###")
+        print(close_msg)
 
     def _on_open(self, ws):
         """
