@@ -4,6 +4,7 @@
 # as they match the data coming out of the app. 
 # Please preserve the comment so that you can copy/paste to change the sensors used.
 # ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
+# sensors = ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
 sensors = ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
 # The base IMU is what all of the orientations is based off of. You can use one of the sensor names.
 base_imu = "pelvis_imu"
@@ -18,7 +19,8 @@ offline_data_name = "Full.csv"
 accuracy = 0.01 
 # This was tuned experimentially. Changing might be risky. 
 constraint_var = 10.0
-# This is the output data rate
+# This is the output data rate approximately since we do integer division. 
+# In the future, I hope to make the system run closer to 100 Hz though optimizaiton.
 rate = 20
 # Whether we want to save the data 
 log_data = true

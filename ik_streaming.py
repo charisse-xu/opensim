@@ -17,8 +17,10 @@ from multiprocessing import Process, Queue
 
 osim.Logger.setLevelString("Error")
 
+process = None
 
 def main(args):
+    global process
     config = Config(args)
     script_live = True
     q = Queue()  # queue for quaternion data
@@ -165,5 +167,10 @@ if __name__ == "__main__":
         help="Full path of config file. If not supplied, it will use the default config file",
     )
     args = parser.parse_args()
-
-    main(args)
+    try:
+        main(args)
+    except KeyboardInterrupt:
+        print("Exiting...")
+        if process is not None:
+            process.terminate()
+        exit()

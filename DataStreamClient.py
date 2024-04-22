@@ -57,11 +57,10 @@ class DataStreamClient:
             message (str): The message received from the server.
         """
         data = json.loads(message)
-        if data["raw_data"] or data["custom_data"]:
+        if all(sensor for sensor in data["raw_data"]):
             self.queue.put((0, data))
         else:
             print("Data empty")
-        
 
     def _on_error(self, ws, error):
         """
@@ -99,7 +98,7 @@ class DataStreamClient:
         message = json.dumps(self.requested_data)
         ws.send(message)
         print("Initial Message Sent")
-        time.sleep(5)  # Sleep to ensure message is sent before continuing
+        time.sleep(2)  # Sleep to ensure message is sent before continuing
     
     def _on_reconnect(self, ws):
         print("WebSocket reconnected")
