@@ -84,6 +84,7 @@ class DataStreamClient:
         """
         print("### closed ###")
         print(close_msg)
+        print(close_status_code)
 
     def _on_open(self, ws):
         """
@@ -121,4 +122,4 @@ class DataStreamClient:
             on_close=self._on_close,
             on_reconnect = self._on_reconnect,
         )
-        ws.run_forever(ping_interval=1, reconnect=1)
+        ws.run_forever(reconnect=1)
