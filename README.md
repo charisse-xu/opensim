@@ -6,8 +6,7 @@ A big inspiration for this repository and work is Patrick Slade's work and repo 
 
 ## Requirements
 
-OpenSim only officially supports python 3.7 through 3.10, so you will need to have one of these versions installed. You can download python from the [official python website](https://www.python.org/downloads/). If you use Anaconda, you can also create an environment with the required python version. There is a chance that OpenSim will work with other versions of python, but it is not guaranteed.
-
+This only works with Python 3.10. You can download python from the [official python website](https://www.python.org/downloads/). If you use Anaconda, you can also create an environment with the required python version.
 ## Installation
 
 To install OpenSimRT, clone the repository and install the required dependencies.
