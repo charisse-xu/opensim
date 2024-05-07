@@ -5,6 +5,8 @@
 # Please preserve the comment so that you can copy/paste to change the sensors used.
 # ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
 # sensors = ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
+# Here is the full set of available imus
+# sensor_labels_full = ['pelvis_imu','torso_imu','femur_l_imu','tibia_l_imu','calcn_l_imu','femur_r_imu','tibia_r_imu','calcn_r_imu','humerus_l_imu','ulna_l_imu','hand_l_imu','humerus_r_imu','ulna_r_imu','hand_r_imu']
 sensors = ["calcn_r_imu", "calcn_l_imu", "tibia_r_imu", "tibia_l_imu", "femur_r_imu", "femur_l_imu", "pelvis_imu", "torso_imu" ]
 # The base IMU is what all of the orientations is based off of. You can use one of the sensor names.
 base_imu = "pelvis_imu"
