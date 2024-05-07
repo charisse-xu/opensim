@@ -28,3 +28,5 @@ rate = 20
 log_data = true
 # Whether you want to visualize the data using the 3d visualizer
 visualize = true
+# Save the data to the following file name
+output_filename = "output.csv"

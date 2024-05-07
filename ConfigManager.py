@@ -12,7 +12,7 @@ class Config:
 
     def initialize(self):
         # Required parameters
-        self.validate_required_keys(['offline', 'accuracy', 'constraint_var', 'sensors', 'base_imu', 'base_imu_axis'])
+        self.validate_required_keys(['offline', 'accuracy', 'constraint_var', 'sensors', 'base_imu', 'base_imu_axis', 'output_filename'])
         self.visualize = self.data["visualize"]
         self.rate = self.data["rate"]
         self.offline = self.data['offline']
@@ -24,11 +24,12 @@ class Config:
         self.uncal_model = "Rajagopal_2015.osim"
         self.uncal_model_filename = self.home_dir / self.uncal_model
         self.model_filename = self.home_dir / ("calibrated_" + self.uncal_model)
-        self.offline_data = self.home_dir / "offline/"
+        self.offline_data_folder = self.home_dir / "offline/"
         self.sto_filename = str(self.home_dir / "temp_file.sto")
         self.save_dir_init = self.home_dir / "recordings/"
         self.offline_data_name = self.data["offline_data_name"] if self.offline else None
         self.log_data = self.data["log_data"]
+        self.output_filename = self.data["output_filename"]
 
     def validate_required_keys(self, required_keys):
         missing_keys = [key for key in required_keys if key not in self.data]
