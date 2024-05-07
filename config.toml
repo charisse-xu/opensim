@@ -27,3 +27,5 @@ log_data = true
 visualize = true
 # Save the data to the following file name
 output_filename = "output.csv"
+# Logging level (Debug, Info, Warning, Error)
+logging_level = "Error"

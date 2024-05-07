@@ -12,10 +12,9 @@ from ConfigManager import Config
 import argparse
 from multiprocessing import Process, Queue
 
-osim.Logger.setLevelString("Error")
-
 def main(args):
     config = Config(args)
+    osim.Logger.setLevelString(config.logging_level)
     q = Queue()  # queue for quaternion data
 
     if not config.offline:
@@ -146,8 +145,6 @@ def initalize_model_and_reporter(config):
     model.addComponent(ikReporter)
     model.finalizeConnections()
     return model,ikReporter
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
