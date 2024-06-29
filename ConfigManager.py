@@ -30,6 +30,7 @@ class Config:
         self.offline_data_name = self.data["offline_data_name"] if self.offline else None
         self.log_data = self.data["log_data"]
         self.output_filename = self.data["output_filename"]
+        self.time_filename = self.data["time_filename"]
         self.logging_level = self.data["logging_level"]
 
     def validate_required_keys(self, required_keys):

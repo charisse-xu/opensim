@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import time
 import opensim as osim
 from opensim import Vec3
 import numpy as np
@@ -23,6 +24,7 @@ def main(args):
         offline_init(config, q)
 
     time_sample, data = q.get()
+    # print(data)
 
     data = transform_data(data)
 
@@ -35,16 +37,22 @@ def main(args):
     s0, ikSolver = initialize_ik(config, model)
 
     # IK solver loop
-    t = 0  # number of steps
+    t = 0  # number of steps why????
+    time_IK = 0. # timing simulation
+    time_stack = []
     keep_running = True
+    start_sim_time = time.time()
     if not config.offline:
         while q.qsize() > 0:
             q.get()
     while keep_running:
         try:
-            keep_running, t = update(config, q, model, s0, ikSolver, t)
+            # print(q.get())
+            keep_running, t, time_IK, time_stack = update(config, q, model, s0, ikSolver, t, time_IK, time_stack)
+            # print("Time used in IK:",time_IK,"Total time:",time.time()-start_sim_time)
         except KeyboardInterrupt:
             break
+    save_time(time_stack, config)
     save_kinematics(ikReporter, config)
 
 def offline_init(config, q):
@@ -52,26 +60,34 @@ def offline_init(config, q):
             str(config.offline_data_folder / config.offline_data_name)
         )
     for idx, packet in enumerate(packets):
-        q.put([idx * 1/config.rate, packet])
+        if idx < 100: continue # 去掉刚开始的不对的数据
+        q.put([(idx-100) * 1/config.rate, packet]) # 根据rate得到时间
+        # q.put(packet) # packet里面有时间
     q.put("done")
 
 def online_init(args, config, q):
     fields = ["Sampletime", "Quat1", "Quat2", "Quat3", "Quat4"]
     requested_data = [[i, sensor] for sensor in fields for i in range(len(config.sensors))]
+    requested_data.append(["universal_time"])
     client = DataStreamClient(args.address, q, requested_data=requested_data)
     process = Process(target=client.run_forever)
     process.start()
 
-def update(config, q, model, s0, ikSolver, t):
+def update(config, q, model, s0, ikSolver, t, time_IK, time_stack):
     dt = 1 / config.rate
     print(f'Elements in Queue: {q.qsize():05}', end="\r")
-    for _ in range(100//config.rate):
+    for _ in range(100//config.rate): # ==5, why? 渲染速度
         queue_values = q.get()
         if queue_values == "done":
-            return False, t
+            return False, t, time_IK, time_stack
     time_sample, data = queue_values
+    # data = queue_values
+    # print(time_sample)
     data = transform_data(data)
-    time_s = t * dt
+    collect_time = float(data["custom_data"][0])
+    add_time = time.time()
+    time_s = t * dt # 从0开始，跟time_sample一样？除非去掉了前几(5)个
+    # print(time_s)
     quat2sto_single(data, config.sensors, config.sto_filename, time_sample, config.rate)
     quatTable = osim.TimeSeriesTableQuaternion(config.sto_filename)
     orientationsData = osim.OpenSenseUtilities.convertQuaternionsToRotations(quatTable)
@@ -84,10 +100,15 @@ def update(config, q, model, s0, ikSolver, t):
             model.getVisualizer().show(s0)
         except RuntimeError:
             print("It seemed that you closed the visualizer window. Quitting now.")
-            return False, t
+            return False, t, time_IK, time_stack
     model.realizeReport(s0)
     t += 1
-    return True, t
+    time_IK += time.time() - add_time
+    time_delay = time.time() - collect_time # 这个有点问题再看看
+    time_stack.append([time_sample, time_delay])
+
+    return True, t, time_IK, time_stack
+
 
 def save_kinematics(ikReporter, config):
     columns = list(ikReporter.getTable().getColumnLabels())
@@ -97,6 +118,11 @@ def save_kinematics(ikReporter, config):
     data = np.column_stack((time_col, angle_data))
     header = ','.join(columns)
     np.savetxt(config.output_filename, data, delimiter=',', header=header, comments='')
+
+def save_time(time_stack, config):
+    data = time_stack
+    header = 'sample time,delay time'
+    np.savetxt(config.time_filename, data, delimiter=',', header=header, comments='')
 
 def initialize_ik(config, model):
     quatTable = osim.TimeSeriesTableQuaternion(config.sto_filename)
@@ -124,7 +150,7 @@ def initialize_ik(config, model):
 
 def initalize_model_and_reporter(config):
     visualize_init = False
-    sensor_to_opensim_rotations = Vec3(0, 0, 0)
+    sensor_to_opensim_rotations = Vec3(0, 0, 0) ####
     imuPlacer = osim.IMUPlacer()
     imuPlacer.set_model_file(str(config.uncal_model_filename))
     imuPlacer.set_orientation_file_for_calibration(config.sto_filename)

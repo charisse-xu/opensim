@@ -9,6 +9,7 @@ from transforms3d.taitbryan import euler2quat, quat2euler
 def quat2sto_single(sensor_data, sensors, file_dir, t_step, rate):
     num_sensors = len(sensor_data["raw_data"])
     header_text = "\t".join(["time"] + sensors) + "\n" 
+    # header_text = "\t".join(["time", "universal_time"] + sensors) + "\n" 
     with open(file_dir, 'w') as f:
         # initial information to write to file
         f.write("DataRate={}\n".format(rate))
@@ -18,6 +19,7 @@ def quat2sto_single(sensor_data, sensors, file_dir, t_step, rate):
         f.write("endheader\n")
         f.write(header_text)
         f.write("{}".format(t_step))
+        # f.write("\t"+",".join(str(sensor_data["custom_data"])))
         for sensor in range(len(sensors)):
             f.write("\t"+",".join([str(sensor_data["raw_data"][sensor][f"Quat{i+1}"]) for i in range(4)]))
         f.write("\n")
@@ -71,7 +73,8 @@ def convert_csv_to_list_of_packets(csv_file_path):
 
         # Process each row in the CSV
         for row in csv_reader:
-            packet = {"raw_data": [], "custom_data": None}
+            # packet = {"raw_data": [], "custom_data": None}
+            packet = {"raw_data": [], "custom_data": []}
             json_object = construct_json_object(header, row)
             
             # Iterate over each possible sensor index
@@ -79,6 +82,7 @@ def convert_csv_to_list_of_packets(csv_file_path):
                 sensor_key = f"SensorIndex_{i}"
                 if sensor_key in json_object:
                     packet["raw_data"].append(json_object[sensor_key])
+            packet["custom_data"].append(json_object['universal_time'])
             if packet["raw_data"]:  # Only add the packet if there is raw data
                 list_of_packets.append(packet)
     return list_of_packets
