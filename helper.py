@@ -88,9 +88,11 @@ def convert_csv_to_list_of_packets(csv_file_path):
     return list_of_packets
 
 def transform_data(data):
-    transform_quat = euler2quat(0,0,np.pi/2)
+    transform_quat = euler2quat(0,0,-np.pi/2)
     for sensor_idx, sensor in enumerate(data["raw_data"]):
         quat = [float(sensor[f"Quat{i+1}"]) for i in range(4)]
+        # if sensor_idx == 2: transform_quat = euler2quat(0,-np.pi/2,-np.pi/2)
+        # if sensor_idx == 3: transform_quat = euler2quat(np.pi/2,0,-np.pi/2)
         new_quat = qmult(transform_quat, quat)
         for i in range(4):
             data["raw_data"][sensor_idx][f"Quat{i+1}"] = new_quat[i]

@@ -9,8 +9,8 @@ sensors = ["calcn_l_imu", "calcn_r_imu", "tibia_l_imu", "tibia_r_imu", "femur_l_
 # The base IMU is what all of the orientations is based off of. You can use one of the sensor names.
 base_imu = "pelvis_imu"
 # base_imu = "torso_imu"
-# This is the axis that is pointed "Forward"
-base_imu_axis = "y"
+# This is the axis that is pointed "Forward" -z for backward pelvis imu
+base_imu_axis = "-z"
 # This is if you want to use saved SageMotion data to process or to do live streaming
 offline = true
 # This is the offline file name that is present in the offline folder. I check if offline is 
