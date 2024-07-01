@@ -82,13 +82,13 @@ def convert_csv_to_list_of_packets(csv_file_path):
                 sensor_key = f"SensorIndex_{i}"
                 if sensor_key in json_object:
                     packet["raw_data"].append(json_object[sensor_key])
-            packet["custom_data"].append(json_object['universal_time'])
+            packet["custom_data"] = {'universal_time': json_object['universal_time']}
             if packet["raw_data"]:  # Only add the packet if there is raw data
                 list_of_packets.append(packet)
     return list_of_packets
 
 def transform_data(data):
-    transform_quat = euler2quat(0,0,-np.pi/2)
+    transform_quat = euler2quat(0,0,np.pi/2)
     for sensor_idx, sensor in enumerate(data["raw_data"]):
         quat = [float(sensor[f"Quat{i+1}"]) for i in range(4)]
         new_quat = qmult(transform_quat, quat)

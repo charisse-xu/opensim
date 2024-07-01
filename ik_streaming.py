@@ -49,7 +49,7 @@ def main(args):
         try:
             # print(q.get())
             keep_running, t, time_IK, time_stack = update(config, q, model, s0, ikSolver, t, time_IK, time_stack)
-            # print("Time used in IK:",time_IK,"Total time:",time.time()-start_sim_time)
+            print("Time used in IK:",time_IK,"Total time:",time.time()-start_sim_time)
         except KeyboardInterrupt:
             break
     save_time(time_stack, config)
@@ -68,7 +68,7 @@ def offline_init(config, q):
 def online_init(args, config, q):
     fields = ["Sampletime", "Quat1", "Quat2", "Quat3", "Quat4"]
     requested_data = [[i, sensor] for sensor in fields for i in range(len(config.sensors))]
-    requested_data.append(["universal_time"])
+    requested_data.append([None, "universal_time"])
     client = DataStreamClient(args.address, q, requested_data=requested_data)
     process = Process(target=client.run_forever)
     process.start()
@@ -82,10 +82,10 @@ def update(config, q, model, s0, ikSolver, t, time_IK, time_stack):
             return False, t, time_IK, time_stack
     time_sample, data = queue_values
     # data = queue_values
-    # print(time_sample)
-    data = transform_data(data)
-    collect_time = float(data["custom_data"][0])
+    # print(time_sample) # time_sample === 0？
     add_time = time.time()
+    data = transform_data(data)
+    collect_time = float(data['custom_data']['universal_time'][0])
     time_s = t * dt # 从0开始，跟time_sample一样？除非去掉了前几(5)个
     # print(time_s)
     quat2sto_single(data, config.sensors, config.sto_filename, time_sample, config.rate)
@@ -105,7 +105,7 @@ def update(config, q, model, s0, ikSolver, t, time_IK, time_stack):
     t += 1
     time_IK += time.time() - add_time
     time_delay = time.time() - collect_time # 这个有点问题再看看
-    time_stack.append([time_sample, time_delay])
+    time_stack.append([time_s, time_delay])
 
     return True, t, time_IK, time_stack
 
